@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 
 app = FastAPI()
 
@@ -12,11 +12,16 @@ class LegalReviewEnv:
     def step(self, action):
         return {"action_received": action}, 0, True, {}
 
-env = LegalReviewEnv()   # ✅ now correct
+env = LegalReviewEnv()
 
 @app.get("/")
-def home(logs: str = None):
+def home(request: Request):
     return {"message": "Legal Review API running 🚀"}
+
+# 🔥 CATCH EVERYTHING (important)
+@app.get("/{full_path:path}")
+def catch_all(full_path: str):
+    return {"message": "API running", "path": full_path}
 
 @app.post("/reset")
 def reset():
