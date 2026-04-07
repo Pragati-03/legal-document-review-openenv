@@ -1,16 +1,7 @@
-"""
-FastAPI server — exposes the LegalReviewEnv via HTTP following OpenEnv conventions.
-Endpoints:
-  POST /reset          → initial Observation
-  POST /step           → (Observation, Reward, done, info)
-  GET  /state          → current state dict
-  GET  /tasks          → list available tasks
-  GET  /health         → health check
-"""
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -32,7 +23,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Session store (single-session for simplicity; extend with session IDs for multi-agent)
 _env: Optional[LegalReviewEnv] = None
 
 
@@ -46,6 +36,11 @@ class StepResponse(BaseModel):
     reward: Reward
     done: bool
     info: Dict[str, Any]
+
+
+@app.get("/")                          # ← THIS IS THE FIX
+def root():
+    return {"status": "ok", "message": "Legal Document Review — OpenEnv API running 🚀"}
 
 
 @app.get("/health")
@@ -97,5 +92,5 @@ def state():
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.environ.get("PORT", 8000))
+    port = int(os.environ.get("PORT", 7860))  # also fixed default from 8000 → 7860
     uvicorn.run("server:app", host="0.0.0.0", port=port, reload=False)
