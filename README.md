@@ -1,14 +1,14 @@
 
 ---
-title: My Project
-emoji: 🦀
-colorFrom: green
-colorTo: yellow
+title: Legal Document Review OpenEnv
+emoji: ⚖️
+colorFrom: blue
+colorTo: indigo
 sdk: docker
 pinned: false
 ---
 
-Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
+
 
 # ⚖️ Legal Document Review — OpenEnv Environment
 
