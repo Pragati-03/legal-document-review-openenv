@@ -1,19 +1,24 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-
-app = FastAPI()
+import uvicorn
 
 class LegalReviewEnv:
     def __init__(self):
         self.state = {"message": "Environment ready"}
-
     def reset(self):
         return self.state
-
     def step(self, action):
         return {"action_received": action}, 0, True, {}
 
 env = LegalReviewEnv()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Pre-warm env before accepting traffic
+    env.reset()
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 @app.get("/")
 def home(request: Request):
@@ -27,10 +32,5 @@ def reset():
 def step(action: dict):
     return env.step(action)
 
-# Catch-all MUST come last, and only for truly unknown paths
-@app.api_route("/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
-def catch_all(full_path: str, request: Request):
-    return JSONResponse(
-        status_code=200,
-        content={"message": "API running", "path": full_path, "query": str(request.query_params)}
-    )
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=7860)
