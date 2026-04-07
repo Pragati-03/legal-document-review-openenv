@@ -3,8 +3,9 @@
 title: Legal Document Review OpenEnv
 emoji: ⚖️
 colorFrom: blue
-colorTo: indigo
+colorTo: green
 sdk: docker
+app_port:7860
 pinned: false
 ---
 
