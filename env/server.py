@@ -2,7 +2,17 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-env = LegalReviewEnv()
+class LegalReviewEnv:
+    def __init__(self):
+        self.state = {"message": "Environment ready"}
+
+    def reset(self):
+        return self.state
+
+    def step(self, action):
+        return {"action_received": action}, 0, True, {}
+
+env = LegalReviewEnv()   # ✅ now correct
 
 @app.get("/")
 def home():
@@ -15,14 +25,3 @@ def reset():
 @app.post("/step")
 def step(action: dict):
     return env.step(action)
-
-class LegalReviewEnv:
-    def __init__(self):
-        self.state = {"message": "Environment ready"}
-
-    def reset(self):
-        return self.state
-
-    def step(self, action):
-        # Just echo the action for now
-        return {"action_received": action}, 0, True, {}
