@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 ---
 title: My Project
 emoji: 🦀
@@ -9,7 +9,7 @@ pinned: false
 ---
 
 Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
-=======
+
 # ⚖️ Legal Document Review — OpenEnv Environment
 
 [![openenv](https://img.shields.io/badge/openenv-compatible-blue)](https://openenv.ai)
@@ -19,7 +19,7 @@ Check out the configuration reference at https://huggingface.co/docs/hub/spaces-
 
 > An OpenEnv-compliant AI agent environment that simulates **professional legal contract review** — one of the highest-value, most cognitively demanding tasks performed by knowledge workers every day.
 
----
+
 
 ## 📋 Overview
 
@@ -35,7 +35,7 @@ An agent receives a realistic contract document and must:
 
 The environment provides dense, partial reward signals at every step and a comprehensive final score based on detection rate, issue quality, false-positive rate, and efficiency.
 
----
+
 
 ## 🗂️ Environment Structure
 
@@ -56,7 +56,7 @@ legal-review-env/
 └── README.md
 ```
 
----
+
 
 ## 🔌 OpenEnv API
 
@@ -88,7 +88,7 @@ Takes an `Action` and returns `(Observation, Reward, done, info)`.
 ### `GET /state`
 Returns the full serialisable environment state.
 
----
+
 
 ## 📐 Observation Space
 
@@ -105,7 +105,7 @@ Returns the full serialisable environment state.
 | `clarifications` | list | Any clarifications the agent has requested |
 | `hints` | list | Task hints (shown on first step only) |
 
----
+
 
 ## 🎮 Action Space
 
@@ -122,7 +122,7 @@ Returns the full serialisable environment state.
 
 **Severities:** `low` · `medium` · `high` · `critical`
 
----
+
 
 ## 🏆 Reward Design
 
@@ -152,7 +152,7 @@ A final grade is computed and mapped to `[-0.25, +0.25]`, added to cumulative re
 | Efficiency | 10% | Fewer steps = higher score |
 | Submission | 5% | Completed review submitted |
 
----
+
 
 ## 📚 Tasks
 
@@ -170,7 +170,7 @@ A short freelance contract with obvious, beginner-level issues that any competen
 
 **Baseline (gpt-4o): 0.68** | **Oracle: 0.97**
 
----
+
 
 ### Task 2 — Medium: Enterprise SaaS Subscription Agreement
 **Document:** 11 clauses · **Max steps:** 50 · **GT issues:** 5
@@ -207,7 +207,7 @@ A complex M&A transaction agreement requiring cross-clause reasoning, M&A domain
 
 > The hard task is designed to challenge state-of-the-art models. GPT-4o consistently misses the earn-out manipulation risk (H06) and the unregistered IP warranty gap (H04), scoring well below a competent M&A associate.
 
----
+
 
 ## 🚀 Setup & Usage
 
@@ -320,9 +320,3 @@ and serves the container, exposing the OpenEnv HTTP API on port 7860.
 
 Tags: `openenv`, `legal`, `nlp`, `contract-review`, `professional`
 
----
-
-## 📄 License
-
-Apache 2.0 — see [LICENSE](LICENSE).
->>>>>>> 6a2f604 (initial commit)
