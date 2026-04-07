@@ -14,3 +14,6 @@ class TaskDefinition:
     def __init__(self, task_id=None, description=None):
         self.task_id = task_id
         self.description = description
+TASKS = [
+    {"task_id": "task_easy_freelance", "description": "Example task"}
+]
