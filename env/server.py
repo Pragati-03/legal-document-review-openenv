@@ -15,7 +15,7 @@ class LegalReviewEnv:
 env = LegalReviewEnv()   # ✅ now correct
 
 @app.get("/")
-def home():
+def home(logs: str = None):
     return {"message": "Legal Review API running 🚀"}
 
 @app.post("/reset")
