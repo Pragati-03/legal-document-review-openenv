@@ -29,7 +29,7 @@ COPY graders/    ./graders/
 COPY server.py   .
 COPY openenv.yaml .
 COPY baseline_inference.py .
-
+COPY . .
 # Create __init__.py files for packages
 RUN touch env/__init__.py tasks/__init__.py graders/__init__.py
 
