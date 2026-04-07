@@ -1,0 +1,184 @@
+name: legal-document-review
+version: 1.0.0
+description: >
+  An OpenEnv environment that simulates professional legal contract review.
+  An AI agent reads contracts clause by clause, identifies issues, suggests
+  revisions, and approves acceptable clauses. Three tasks of increasing
+  difficulty model real-world contracts: a freelance agreement, an enterprise
+  SaaS subscription, and an M&A asset purchase agreement.
+
+domain: legal
+tags:
+  - openenv
+  - legal
+  - nlp
+  - document-review
+  - professional
+  - contract-analysis
+
+author: openenv-legal-review
+license: Apache-2.0
+repository: https://huggingface.co/spaces/openenv/legal-document-review
+
+api:
+  reset:
+    method: POST
+    path: /reset
+    description: Reset the environment and return the initial observation.
+    request_schema:
+      task_id:
+        type: string
+        required: false
+        description: Task identifier. One of task_easy_freelance, task_medium_saas, task_hard_ma.
+      seed:
+        type: integer
+        required: false
+        default: 42
+    response: Observation
+
+  step:
+    method: POST
+    path: /step
+    description: Apply an action and return observation, reward, done flag, and info.
+    request_schema: Action
+    response:
+      observation: Observation
+      reward: Reward
+      done: boolean
+      info: object
+
+  state:
+    method: GET
+    path: /state
+    description: Return the current full environment state as a JSON object.
+
+observation_space:
+  task_id: string
+  document_title: string
+  current_clause:
+    clause_id: string
+    section: string
+    text: string
+    metadata: object
+  remaining_clauses: integer
+  issues_found:
+    type: array
+    items:
+      clause_id: string
+      category: string
+      severity: string
+      description: string
+      suggested_revision: string
+  progress:
+    total_clauses: integer
+    reviewed_clauses: integer
+    approved_clauses: integer
+    flagged_clauses: integer
+    skipped_clauses: integer
+  step_count: integer
+  max_steps: integer
+  clarifications: array
+  hints: array
+
+action_space:
+  action_type:
+    type: string
+    enum:
+      - identify_issue
+      - suggest_revision
+      - approve_clause
+      - request_clarification
+      - submit_review
+      - skip_clause
+  clause_id:
+    type: string
+    required: false
+  issue_category:
+    type: string
+    required: false
+    enum:
+      - ambiguous_language
+      - missing_clause
+      - unfair_term
+      - compliance_risk
+      - inconsistency
+      - jurisdiction_issue
+      - liability_exposure
+      - ip_risk
+  issue_severity:
+    type: string
+    required: false
+    enum: [low, medium, high, critical]
+  issue_description:
+    type: string
+    required: false
+  suggested_revision:
+    type: string
+    required: false
+  clarification_question:
+    type: string
+    required: false
+  reasoning:
+    type: string
+    required: false
+
+reward:
+  range: [-1.0, 1.0]
+  type: dense
+  description: >
+    Step-level partial reward provided every action. Positive rewards for
+    correctly identifying genuine issues with good descriptions and revisions.
+    Negative rewards for false positives, skipping clauses, or incorrectly
+    approving problematic clauses. Episode-level bonus at completion based
+    on detection rate, issue quality, and efficiency.
+
+tasks:
+  - id: task_easy_freelance
+    difficulty: easy
+    document: Freelance Web Development Service Agreement
+    clauses: 8
+    ground_truth_issues: 4
+    max_steps: 30
+    description: >
+      Simple freelance contract with obvious issues: vague scope,
+      undefined payment, adverse IP ownership, and unfair termination.
+
+  - id: task_medium_saas
+    difficulty: medium
+    document: SaaS Enterprise Subscription Agreement
+    clauses: 11
+    ground_truth_issues: 5
+    max_steps: 50
+    description: >
+      Enterprise SaaS contract with subtler issues: auto-renewal price
+      traps, GDPR compliance gaps, indemnification asymmetry, and
+      inadequate liability caps.
+
+  - id: task_hard_ma
+    difficulty: hard
+    document: Asset Purchase Agreement — Acquisition of TechStartup Inc.
+    clauses: 12
+    ground_truth_issues: 6
+    max_steps: 80
+    description: >
+      Complex M&A agreement requiring cross-clause reasoning: earn-out
+      manipulation risk, IP warranty gaps, non-compete overreach, tax
+      allocation asymmetry, and inadequate indemnification caps.
+
+baseline_scores:
+  model: gpt-4o
+  task_easy_freelance: 0.68
+  task_medium_saas: 0.52
+  task_hard_ma: 0.31
+
+environment:
+  type: episodic
+  observation_type: text
+  action_type: structured-json
+  max_episode_steps:
+    easy: 30
+    medium: 50
+    hard: 80
+  reset_supported: true
+  state_supported: true
+  partial_rewards: true
