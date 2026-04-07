@@ -10,6 +10,11 @@ from pydantic import BaseModel
 from env.environment import LegalReviewEnv
 from env.models import Action, Observation, Reward
 
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+
+
 app = FastAPI(
     title="Legal Document Review — OpenEnv",
     description="AI agent environment for reviewing legal contracts.",
@@ -22,7 +27,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+app.mount("/static", StaticFiles(directory="static"), name="static")
 _env: Optional[LegalReviewEnv] = None
 
 
@@ -40,7 +45,7 @@ class StepResponse(BaseModel):
 
 @app.get("/")                          # ← THIS IS THE FIX
 def root():
-    return {"status": "ok", "message": "Legal Document Review — OpenEnv API running 🚀"}
+    return FileResponse("static/index.html")
 
 
 @app.get("/health")

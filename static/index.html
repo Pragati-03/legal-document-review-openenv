@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Legal Review Environment</title>
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+    button { padding: 8px 16px; margin: 4px; cursor: pointer; background: #2563eb; color: white; border: none; border-radius: 6px; }
+    button:hover { background: #1d4ed8; }
+    select, input { padding: 8px; margin: 4px; border-radius: 6px; border: 1px solid #ccc; }
+    pre { background: #f1f5f9; padding: 16px; border-radius: 8px; overflow-x: auto; white-space: pre-wrap; }
+    .card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin: 16px 0; }
+    h2 { color: #1e3a5f; }
+  </style>
+</head>
+<body>
+  <h1>⚖️ Legal Document Review</h1>
+
+  <div class="card">
+    <h2>1. Load Tasks</h2>
+    <button onclick="loadTasks()">Fetch Available Tasks</button>
+    <pre id="tasks-output">—</pre>
+  </div>
+
+  <div class="card">
+    <h2>2. Reset Environment</h2>
+    <label>Task ID: <input id="task-id" placeholder="leave blank for default" /></label>
+    <button onclick="resetEnv()">Reset</button>
+    <pre id="reset-output">—</pre>
+  </div>
+
+  <div class="card">
+    <h2>3. Take a Step</h2>
+    <textarea id="action-input" rows="4" cols="60" placeholder='{"clause_id": "...", "decision": "approve"}'></textarea><br>
+    <button onclick="takeStep()">Submit Action</button>
+    <pre id="step-output">—</pre>
+  </div>
+
+  <div class="card">
+    <h2>4. View Current State</h2>
+    <button onclick="getState()">Get State</button>
+    <pre id="state-output">—</pre>
+  </div>
+
+  <script>
+    const BASE = "";  // same origin
+
+    async function api(path, method = "GET", body = null) {
+      const opts = { method, headers: { "Content-Type": "application/json" } };
+      if (body) opts.body = JSON.stringify(body);
+      const res = await fetch(BASE + path, opts);
+      return res.json();
+    }
+
+    async function loadTasks() {
+      const data = await api("/tasks");
+      document.getElementById("tasks-output").textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function resetEnv() {
+      const taskId = document.getElementById("task-id").value || null;
+      const data = await api("/reset", "POST", { task_id: taskId, seed: 42 });
+      document.getElementById("reset-output").textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function takeStep() {
+      try {
+        const action = JSON.parse(document.getElementById("action-input").value);
+        const data = await api("/step", "POST", action);
+        document.getElementById("step-output").textContent = JSON.stringify(data, null, 2);
+      } catch (e) {
+        document.getElementById("step-output").textContent = "Invalid JSON: " + e.message;
+      }
+    }
+
+    async function getState() {
+      const data = await api("/state");
+      document.getElementById("state-output").textContent = JSON.stringify(data, null, 2);
+    }
+  </script>
+</body>
+</html>
