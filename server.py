@@ -1,11 +1,12 @@
 """
 FastAPI server — exposes the LegalReviewEnv via HTTP following OpenEnv conventions.
 Endpoints:
-    POST /reset  → initial Observation
-    POST /step   → (Observation, Reward, done, info)
-    GET  /state  → current state dict
-    GET  /tasks  → list available tasks
-    GET  /health → health check
+    GET  /        → service info
+    POST /reset   → initial Observation
+    POST /step    → (Observation, Reward, done, info)
+    GET  /state   → current state dict
+    GET  /tasks   → list available tasks
+    GET  /health  → health check
 """
 from __future__ import annotations
 
@@ -45,6 +46,22 @@ class StepResponse(BaseModel):
     reward: Reward
     done: bool
     info: Dict[str, Any]
+
+
+@app.get("/")
+def root():
+    return {
+        "service": "Legal Document Review — OpenEnv",
+        "version": "1.0.0",
+        "endpoints": {
+            "health": "GET /health",
+            "tasks": "GET /tasks",
+            "reset": "POST /reset",
+            "step": "POST /step",
+            "state": "GET /state",
+            "docs": "GET /docs",
+        }
+    }
 
 
 @app.get("/health")
