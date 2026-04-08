@@ -1,46 +1,47 @@
-# Legal Document Review — OpenEnv
-# Dockerfile for containerized deployment (HF Spaces + local Docker)
 FROM python:3.11-slim
 
-# Metadata
-LABEL maintainer="openenv-legal-review"
-LABEL org.opencontainers.image.title="Legal Document Review OpenEnv"
-LABEL org.opencontainers.image.description="AI agent environment for legal contract review"
-LABEL org.opencontainers.image.version="1.0.0"
-LABEL space_sdk="docker"
-LABEL tags="openenv"
-
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for layer caching
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application source
-COPY env/        ./env/
-COPY tasks/      ./tasks/
-COPY graders/    ./graders/
-COPY server.py   .
-COPY openenv.yaml .
-COPY baseline_inference.py .
 COPY . .
-# Create __init__.py files for packages
+
+# Delete ALL pycache so nothing stale is used
+RUN find /app -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+RUN find /app -name "*.pyc" -delete 2>/dev/null || true
+
+# Ensure __init__.py files exist
 RUN touch env/__init__.py tasks/__init__.py graders/__init__.py
 
-# Expose the API port
-# HF Spaces expects port 7860; override with PORT env var
+# Force Python to recompile everything fresh
+RUN python -c "
+import compileall
+compileall.compile_dir('/app/env', quiet=1)
+compileall.compile_dir('/app/tasks', quiet=1)
+compileall.compile_dir('/app/graders', quiet=1)
+print('Compilation done')
+"
+
+# Verify tasks load correctly at build time - will fail build if broken
+RUN python -c "
+import sys
+sys.path.insert(0, '/app')
+from tasks.task_definitions import ALL_TASKS
+assert len(ALL_TASKS) == 3, f'Expected 3 tasks, got {len(ALL_TASKS)}'
+for tid, t in ALL_TASKS.items():
+    assert hasattr(t, 'difficulty'), f'Task {tid} missing difficulty'
+    assert hasattr(t, 'document_title'), f'Task {tid} missing document_title'
+    print(f'OK: {tid} - {t.difficulty} - {t.document_title}')
+print('All tasks verified!')
+"
+
 ENV PORT=7860
 EXPOSE 7860
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:${PORT}/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD curl -f http://localhost:7860/health || exit 1
 
-# Run the FastAPI server
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "7860", "--workers", "1"]
