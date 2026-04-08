@@ -1,12 +1,5 @@
 """
 FastAPI server — exposes the LegalReviewEnv via HTTP following OpenEnv conventions.
-Endpoints:
-    GET  /        → service info
-    POST /reset   → initial Observation
-    POST /step    → (Observation, Reward, done, info)
-    GET  /state   → current state dict
-    GET  /tasks   → list available tasks
-    GET  /health  → health check
 """
 from __future__ import annotations
 
@@ -55,10 +48,13 @@ def root():
         "version": "1.0.0",
         "endpoints": {
             "health": "GET /health",
+            "metadata": "GET /metadata",
+            "schema": "GET /schema",
             "tasks": "GET /tasks",
             "reset": "POST /reset",
             "step": "POST /step",
             "state": "GET /state",
+            "mcp": "POST /mcp",
             "docs": "GET /docs",
         }
     }
@@ -66,7 +62,64 @@ def root():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "legal-review-openenv"}
+    return {"status": "healthy", "service": "legal-review-openenv"}
+
+
+@app.get("/metadata")
+def metadata():
+    return {
+        "name": "Legal Document Review",
+        "description": "AI agent environment for reviewing legal contracts.",
+        "version": "1.0.0",
+        "task_type": "document_review",
+        "domain": "legal",
+        "modality": "text",
+        "multi_step": True,
+    }
+
+
+@app.get("/schema")
+def schema():
+    return {
+        "action": {
+            "type": "object",
+            "properties": {
+                "clause_id": {"type": "string"},
+                "risk_level": {"type": "string", "enum": ["low", "medium", "high"]},
+                "recommendation": {"type": "string"},
+            },
+            "required": ["clause_id", "risk_level", "recommendation"],
+        },
+        "observation": {
+            "type": "object",
+            "properties": {
+                "clauses": {"type": "array"},
+                "document_title": {"type": "string"},
+                "step": {"type": "integer"},
+            },
+        },
+        "state": {
+            "type": "object",
+            "properties": {
+                "task_id": {"type": "string"},
+                "done": {"type": "boolean"},
+                "total_reward": {"type": "number"},
+            },
+        },
+    }
+
+
+@app.post("/mcp")
+def mcp(request: Dict[str, Any]):
+    return {
+        "jsonrpc": "2.0",
+        "id": request.get("id", 1),
+        "result": {
+            "name": "Legal Document Review — OpenEnv",
+            "version": "1.0.0",
+            "capabilities": ["reset", "step", "state", "schema", "metadata"],
+        },
+    }
 
 
 @app.get("/tasks")
