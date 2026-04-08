@@ -2,7 +2,6 @@
 Typed Pydantic models for the Legal Document Review OpenEnv environment.
 Observation, Action, and Reward models following the OpenEnv specification.
 """
-from __future__ import annotations
 
 from enum import Enum
 from typing import Any, Dict, List, Optional

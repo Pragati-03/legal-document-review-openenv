@@ -3,7 +3,6 @@ Deterministic graders for each task.
 Each grader returns a score in [0.0, 1.0] and a breakdown dict.
 Graders are pure functions — given the same inputs they always return the same output.
 """
-from __future__ import annotations
 
 import re
 from dataclasses import dataclass

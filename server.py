@@ -1,7 +1,6 @@
 """
 FastAPI server — Legal Document Review OpenEnv
 """
-from __future__ import annotations
 
 import os
 import sys
