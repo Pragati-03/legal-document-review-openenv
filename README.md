@@ -1,28 +1,24 @@
-
 ---
 title: Legal Document Review OpenEnv
 emoji: ⚖️
 colorFrom: blue
-colorTo: green
+colorTo: indigo
 sdk: docker
-app_port: 7860
 pinned: false
 tags:
 - openenv
 ---
 
-
-
 # ⚖️ Legal Document Review — OpenEnv Environment
 
 [![openenv](https://img.shields.io/badge/openenv-compatible-blue)](https://openenv.ai)
-[![HuggingFace](https://img.shields.io/badge/🤗%20Spaces-legal--document--review-yellow)](https://huggingface.co/spaces/openenv/legal-document-review)
+[![HuggingFace](https://img.shields.io/badge/🤗%20Spaces-legal--document--review-yellow)](https://huggingface.co/spaces/pragati03/my-project)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://python.org)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 
 > An OpenEnv-compliant AI agent environment that simulates **professional legal contract review** — one of the highest-value, most cognitively demanding tasks performed by knowledge workers every day.
 
-
+---
 
 ## 📋 Overview
 
@@ -38,28 +34,36 @@ An agent receives a realistic contract document and must:
 
 The environment provides dense, partial reward signals at every step and a comprehensive final score based on detection rate, issue quality, false-positive rate, and efficiency.
 
-
+---
 
 ## 🗂️ Environment Structure
 
 ```
 legal-review-env/
 ├── env/
-│   ├── models.py          # Typed Pydantic models (Observation, Action, Reward)
-│   └── environment.py     # LegalReviewEnv class — reset(), step(), state()
+│   ├── __init__.py
+│   ├── models.py              # Typed Pydantic models (Observation, Action, Reward)
+│   └── environment.py         # LegalReviewEnv class — reset(), step(), state()
 ├── tasks/
-│   └── task_definitions.py # 3 tasks with ground-truth annotations
+│   ├── __init__.py
+│   └── task_definitions.py    # 3 tasks with ground-truth annotations
 ├── graders/
-│   └── grader.py          # Deterministic graders, step-level reward shaping
-├── server.py              # FastAPI HTTP server (OpenEnv API)
-├── baseline_inference.py  # OpenAI-based baseline agent
-├── openenv.yaml           # OpenEnv metadata
-├── Dockerfile             # Container build for HF Spaces + local use
+│   ├── __init__.py
+│   └── grader.py              # Deterministic graders, step-level reward shaping
+├── static/
+│   └── index.html             # Dark UI frontend served at /
+├── server.py                  # FastAPI HTTP server (OpenEnv API)
+├── app.py                     # HF Spaces entry point
+├── baseline_inference.py      # OpenAI-based baseline agent
+├── openenv_validate.py        # Full spec validator — 60 checks, exits 0 on pass
+├── openenv.yaml               # OpenEnv metadata
+├── Dockerfile                 # Container build for HF Spaces + local use
 ├── requirements.txt
+├── .gitignore
 └── README.md
 ```
 
-
+---
 
 ## 🔌 OpenEnv API
 
@@ -91,7 +95,7 @@ Takes an `Action` and returns `(Observation, Reward, done, info)`.
 ### `GET /state`
 Returns the full serialisable environment state.
 
-
+---
 
 ## 📐 Observation Space
 
@@ -108,7 +112,7 @@ Returns the full serialisable environment state.
 | `clarifications` | list | Any clarifications the agent has requested |
 | `hints` | list | Task hints (shown on first step only) |
 
-
+---
 
 ## 🎮 Action Space
 
@@ -125,7 +129,7 @@ Returns the full serialisable environment state.
 
 **Severities:** `low` · `medium` · `high` · `critical`
 
-
+---
 
 ## 🏆 Reward Design
 
@@ -155,7 +159,7 @@ A final grade is computed and mapped to `[-0.25, +0.25]`, added to cumulative re
 | Efficiency | 10% | Fewer steps = higher score |
 | Submission | 5% | Completed review submitted |
 
-
+---
 
 ## 📚 Tasks
 
@@ -173,7 +177,7 @@ A short freelance contract with obvious, beginner-level issues that any competen
 
 **Baseline (gpt-4o): 0.68** | **Oracle: 0.97**
 
-
+---
 
 ### Task 2 — Medium: Enterprise SaaS Subscription Agreement
 **Document:** 11 clauses · **Max steps:** 50 · **GT issues:** 5
@@ -210,7 +214,7 @@ A complex M&A transaction agreement requiring cross-clause reasoning, M&A domain
 
 > The hard task is designed to challenge state-of-the-art models. GPT-4o consistently misses the earn-out manipulation risk (H06) and the unregistered IP warranty gap (H04), scoring well below a competent M&A associate.
 
-
+---
 
 ## 🚀 Setup & Usage
 
@@ -316,10 +320,15 @@ Scores are reproducible with `OPENAI_API_KEY` set, `temperature=0`, `seed=42`.
 
 ## 🏗️ Hugging Face Spaces Deployment
 
-This environment is deployed at: `https://huggingface.co/spaces/openenv/legal-document-review`
+This environment is deployed at: `https://huggingface.co/spaces/pragati03/my-project`
 
 The space uses the `Dockerfile` at the repository root. HF Spaces automatically builds
 and serves the container, exposing the OpenEnv HTTP API on port 7860.
 
 Tags: `openenv`, `legal`, `nlp`, `contract-review`, `professional`
 
+---
+
+## 📄 License
+
+Apache 2.0 — see [LICENSE](LICENSE).

@@ -18,7 +18,7 @@ tags:
 
 author: openenv-legal-review
 license: Apache-2.0
-repository: https://huggingface.co/spaces/openenv/legal-document-review
+repository: https://huggingface.co/spaces/pragati03/my-project
 
 api:
   reset:
