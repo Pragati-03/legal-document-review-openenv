@@ -8,6 +8,8 @@ from typing import Any, Dict, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from env.environment import LegalReviewEnv
@@ -43,21 +45,7 @@ class StepResponse(BaseModel):
 
 @app.get("/")
 def root():
-    return {
-        "service": "Legal Document Review — OpenEnv",
-        "version": "1.0.0",
-        "endpoints": {
-            "health": "GET /health",
-            "metadata": "GET /metadata",
-            "schema": "GET /schema",
-            "tasks": "GET /tasks",
-            "reset": "POST /reset",
-            "step": "POST /step",
-            "state": "GET /state",
-            "mcp": "POST /mcp",
-            "docs": "GET /docs",
-        }
-    }
+    return FileResponse("static/index.html")
 
 
 @app.get("/health")
@@ -162,6 +150,9 @@ def state():
     if _env is None:
         raise HTTPException(status_code=400, detail="Environment not initialised. Call /reset first.")
     return _env.state()
+
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 if __name__ == "__main__":
