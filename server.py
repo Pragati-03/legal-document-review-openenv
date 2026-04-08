@@ -1,19 +1,25 @@
+"""
+FastAPI server — exposes the LegalReviewEnv via HTTP following OpenEnv conventions.
+Endpoints:
+  POST /reset          → initial Observation
+  POST /step           → (Observation, Reward, done, info)
+  GET  /state          → current state dict
+  GET  /tasks          → list available tasks
+  GET  /health         → health check
+"""
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from env.environment import LegalReviewEnv
 from env.models import Action, Observation, Reward
-
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-
-
 
 app = FastAPI(
     title="Legal Document Review — OpenEnv",
@@ -27,7 +33,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Serve static files if the folder exists
+if os.path.isdir("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/")
+def root():
+    if os.path.isfile("static/index.html"):
+        return FileResponse("static/index.html")
+    return {"status": "ok", "message": "Legal Document Review OpenEnv API"}
+
+# Session store (single-session for simplicity; extend with session IDs for multi-agent)
 _env: Optional[LegalReviewEnv] = None
 
 
@@ -41,11 +58,6 @@ class StepResponse(BaseModel):
     reward: Reward
     done: bool
     info: Dict[str, Any]
-
-
-@app.get("/")                          # ← THIS IS THE FIX
-def root():
-    return FileResponse("static/index.html")
 
 
 @app.get("/health")
@@ -97,5 +109,5 @@ def state():
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.environ.get("PORT", 7860))  # also fixed default from 8000 → 7860
+    port = int(os.environ.get("PORT", 8000))
     uvicorn.run("server:app", host="0.0.0.0", port=port, reload=False)

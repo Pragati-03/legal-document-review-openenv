@@ -2,81 +2,1206 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Legal Review Environment</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Legal Document Review — OpenEnv</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
   <style>
-    body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
-    button { padding: 8px 16px; margin: 4px; cursor: pointer; background: #2563eb; color: white; border: none; border-radius: 6px; }
-    button:hover { background: #1d4ed8; }
-    select, input { padding: 8px; margin: 4px; border-radius: 6px; border: 1px solid #ccc; }
-    pre { background: #f1f5f9; padding: 16px; border-radius: 8px; overflow-x: auto; white-space: pre-wrap; }
-    .card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin: 16px 0; }
-    h2 { color: #1e3a5f; }
+    :root {
+      --bg: #0a0c0f;
+      --bg2: #111418;
+      --bg3: #181c22;
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.13);
+      --gold: #c9a84c;
+      --gold2: #e8c97a;
+      --red: #e05555;
+      --green: #4caf82;
+      --blue: #4a8fe8;
+      --muted: #5a6272;
+      --text: #e8e4dc;
+      --text2: #9aa0ad;
+      --text3: #5a6272;
+      --font-display: 'Playfair Display', Georgia, serif;
+      --font-body: 'DM Sans', system-ui, sans-serif;
+      --font-mono: 'DM Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 14px;
+      font-weight: 300;
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 0 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      background: rgba(10,12,15,0.95);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+    }
+    .logo {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--gold);
+      letter-spacing: 0.01em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-gavel { font-size: 20px; }
+    .header-badge {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text3);
+      border: 1px solid var(--border2);
+      padding: 3px 10px;
+      border-radius: 3px;
+      letter-spacing: 0.1em;
+    }
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+      display: inline-block;
+      margin-right: 6px;
+      transition: background 0.3s;
+    }
+    .status-dot.live { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .status-dot.error { background: var(--red); }
+    #conn-status { font-size: 11px; color: var(--text3); font-family: var(--font-mono); }
+
+    /* ── LAYOUT ── */
+    .shell {
+      display: grid;
+      grid-template-columns: 260px 1fr 320px;
+      grid-template-rows: auto 1fr;
+      min-height: calc(100vh - 64px);
+    }
+
+    /* ── SIDEBAR LEFT ── */
+    .sidebar-left {
+      border-right: 1px solid var(--border);
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    .sidebar-section-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.18em;
+      color: var(--text3);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .task-select-wrap { display: flex; flex-direction: column; gap: 8px; }
+    select {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 13px;
+      padding: 9px 12px;
+      border-radius: 6px;
+      width: 100%;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%235a6272' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      transition: border-color 0.2s;
+    }
+    select:focus { outline: none; border-color: var(--gold); }
+
+    .btn {
+      padding: 9px 16px;
+      border: none;
+      border-radius: 6px;
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.18s;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      justify-content: center;
+    }
+    .btn-primary {
+      background: var(--gold);
+      color: #0a0c0f;
+    }
+    .btn-primary:hover { background: var(--gold2); transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border2);
+      color: var(--text2);
+    }
+    .btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+    .btn-danger {
+      background: rgba(224,85,85,0.12);
+      border: 1px solid rgba(224,85,85,0.3);
+      color: var(--red);
+    }
+    .btn-danger:hover { background: rgba(224,85,85,0.2); }
+    .btn-success {
+      background: rgba(76,175,130,0.12);
+      border: 1px solid rgba(76,175,130,0.3);
+      color: var(--green);
+    }
+    .btn-success:hover { background: rgba(76,175,130,0.2); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+    /* metrics */
+    .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .metric {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .metric-val {
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1;
+    }
+    .metric-lbl {
+      font-size: 10px;
+      color: var(--text3);
+      letter-spacing: 0.06em;
+      margin-top: 4px;
+      font-family: var(--font-mono);
+    }
+    .metric-val.good { color: var(--green); }
+    .metric-val.bad { color: var(--red); }
+
+    .progress-track {
+      height: 3px;
+      background: var(--bg3);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--gold);
+      border-radius: 2px;
+      transition: width 0.4s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* reward display */
+    .reward-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .reward-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 3px 0;
+    }
+    .reward-key { font-size: 11px; color: var(--text3); font-family: var(--font-mono); }
+    .reward-num {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .reward-num.pos { color: var(--green); }
+    .reward-num.neg { color: var(--red); }
+    .reward-feedback {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+      font-style: italic;
+      line-height: 1.5;
+    }
+
+    /* ── MAIN CENTER ── */
+    .main-center {
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .main-toolbar {
+      padding: 18px 28px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .doc-title {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .doc-meta { font-size: 11px; color: var(--text3); margin-top: 2px; font-family: var(--font-mono); }
+
+    .clauses-wrap {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .clauses-wrap::-webkit-scrollbar { width: 4px; }
+    .clauses-wrap::-webkit-scrollbar-track { background: transparent; }
+    .clauses-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+    .clause-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+      transition: all 0.2s;
+      position: relative;
+      cursor: pointer;
+    }
+    .clause-card:hover { border-color: var(--border2); }
+    .clause-card.active {
+      border-color: var(--gold);
+      background: rgba(201,168,76,0.04);
+    }
+    .clause-card.flagged {
+      border-color: rgba(224,85,85,0.4);
+      background: rgba(224,85,85,0.04);
+    }
+    .clause-card.approved {
+      border-color: rgba(76,175,130,0.3);
+      background: rgba(76,175,130,0.03);
+    }
+    .clause-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .clause-id-badge {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text3);
+      background: var(--bg3);
+      padding: 2px 8px;
+      border-radius: 3px;
+      letter-spacing: 0.06em;
+    }
+    .clause-section {
+      font-size: 11px;
+      color: var(--text3);
+      font-weight: 500;
+      letter-spacing: 0.03em;
+    }
+    .clause-text {
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.75;
+    }
+    .clause-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      padding: 3px 9px;
+      border-radius: 99px;
+      margin-top: 10px;
+      font-weight: 500;
+    }
+    .clause-status.reviewing {
+      background: rgba(201,168,76,0.1);
+      color: var(--gold);
+      border: 1px solid rgba(201,168,76,0.2);
+    }
+    .clause-status.flagged {
+      background: rgba(224,85,85,0.1);
+      color: var(--red);
+      border: 1px solid rgba(224,85,85,0.2);
+    }
+    .clause-status.approved {
+      background: rgba(76,175,130,0.1);
+      color: var(--green);
+      border: 1px solid rgba(76,175,130,0.2);
+    }
+    .clause-active-indicator {
+      position: absolute;
+      left: 0; top: 50%;
+      transform: translateY(-50%);
+      width: 3px; height: 40px;
+      background: var(--gold);
+      border-radius: 0 2px 2px 0;
+    }
+
+    /* action panel inside main */
+    .action-panel {
+      border-top: 1px solid var(--border);
+      padding: 20px 28px;
+      background: var(--bg2);
+      flex-shrink: 0;
+    }
+    .action-panel-title {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      color: var(--text3);
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    .action-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .current-clause-label {
+      font-size: 11px;
+      color: var(--text3);
+      font-family: var(--font-mono);
+      margin-right: 4px;
+    }
+    .current-clause-id {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--gold);
+      background: rgba(201,168,76,0.08);
+      padding: 2px 8px;
+      border-radius: 3px;
+    }
+
+    /* ── SIDEBAR RIGHT ── */
+    .sidebar-right {
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      overflow-y: auto;
+    }
+    .sidebar-right::-webkit-scrollbar { width: 4px; }
+    .sidebar-right::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+    /* action builder */
+    .action-builder {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .form-row { margin-bottom: 12px; }
+    .form-label {
+      display: block;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: var(--text3);
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+    textarea, input[type=text] {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 9px 12px;
+      border-radius: 6px;
+      resize: vertical;
+      transition: border-color 0.2s;
+      line-height: 1.6;
+    }
+    textarea:focus, input[type=text]:focus, select:focus {
+      outline: none;
+      border-color: var(--gold);
+    }
+    textarea::placeholder, input::placeholder { color: var(--text3); }
+
+    /* log */
+    .log-container {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .log-header {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .log-title {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: var(--text3);
+      text-transform: uppercase;
+    }
+    .log-clear {
+      font-size: 10px;
+      color: var(--text3);
+      cursor: pointer;
+      font-family: var(--font-mono);
+      background: none;
+      border: none;
+      padding: 0;
+    }
+    .log-clear:hover { color: var(--red); }
+    .log-body {
+      padding: 10px 14px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.8;
+    }
+    .log-body::-webkit-scrollbar { width: 3px; }
+    .log-body::-webkit-scrollbar-thumb { background: var(--border2); }
+    .log-entry { display: flex; gap: 8px; align-items: baseline; }
+    .log-step { color: var(--text3); min-width: 28px; }
+    .log-type { min-width: 90px; }
+    .log-type.flag { color: var(--red); }
+    .log-type.approve { color: var(--green); }
+    .log-type.submit { color: var(--blue); }
+    .log-rwd { margin-left: auto; font-weight: 500; }
+    .log-rwd.pos { color: var(--green); }
+    .log-rwd.neg { color: var(--red); }
+
+    /* api trace */
+    .api-trace {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .api-trace-header {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: var(--text3);
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .api-method {
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: 500;
+    }
+    .api-method.post { background: rgba(74,143,232,0.15); color: var(--blue); }
+    .api-method.get { background: rgba(76,175,130,0.15); color: var(--green); }
+    .api-trace pre {
+      padding: 12px 14px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text2);
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 180px;
+      overflow-y: auto;
+      margin: 0;
+      background: none;
+      line-height: 1.7;
+    }
+    .api-trace pre::-webkit-scrollbar { width: 3px; }
+    .api-trace pre::-webkit-scrollbar-thumb { background: var(--border2); }
+
+    /* done overlay */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10,12,15,0.92);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(8px);
+    }
+    .done-overlay.visible { display: flex; }
+    .done-card {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: 16px;
+      padding: 48px;
+      text-align: center;
+      max-width: 420px;
+      width: 90%;
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .done-icon { font-size: 40px; margin-bottom: 16px; }
+    .done-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      color: var(--text3);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .done-score {
+      font-family: var(--font-display);
+      font-size: 72px;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .done-score-max {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text3);
+      margin-bottom: 32px;
+    }
+    .done-breakdown {
+      background: var(--bg3);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+      text-align: left;
+    }
+    .done-breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      font-size: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .done-breakdown-row:last-child { border: none; }
+    .done-breakdown-key { color: var(--text3); font-family: var(--font-mono); }
+    .done-breakdown-val { font-family: var(--font-mono); font-weight: 500; color: var(--text); }
+    .done-explanation {
+      font-size: 12px;
+      color: var(--text3);
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    /* empty state */
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 60px;
+      text-align: center;
+    }
+    .empty-icon { font-size: 36px; opacity: 0.3; }
+    .empty-text { font-size: 13px; color: var(--text3); max-width: 260px; line-height: 1.7; }
+
+    /* toast */
+    .toast {
+      position: fixed;
+      bottom: 28px; right: 28px;
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      padding: 12px 18px;
+      font-size: 12px;
+      color: var(--text2);
+      font-family: var(--font-mono);
+      z-index: 300;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: all 0.2s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.err { border-color: rgba(224,85,85,0.4); color: var(--red); }
+    .toast.ok { border-color: rgba(76,175,130,0.4); color: var(--green); }
+
+    @media (max-width: 900px) {
+      .shell { grid-template-columns: 1fr; }
+      .sidebar-left, .sidebar-right { border: none; border-bottom: 1px solid var(--border); }
+    }
   </style>
 </head>
 <body>
-  <h1>⚖️ Legal Document Review</h1>
 
-  <div class="card">
-    <h2>1. Load Tasks</h2>
-    <button onclick="loadTasks()">Fetch Available Tasks</button>
-    <pre id="tasks-output">—</pre>
+<header>
+  <div class="logo">
+    <span class="logo-gavel">⚖️</span>
+    Legal Document Review
   </div>
-
-  <div class="card">
-    <h2>2. Reset Environment</h2>
-    <label>Task ID: <input id="task-id" placeholder="leave blank for default" /></label>
-    <button onclick="resetEnv()">Reset</button>
-    <pre id="reset-output">—</pre>
+  <div style="display:flex;align-items:center;gap:16px">
+    <span id="conn-status"><span class="status-dot" id="dot"></span>disconnected</span>
+    <span class="header-badge">OpenEnv v1.0</span>
   </div>
+</header>
 
-  <div class="card">
-    <h2>3. Take a Step</h2>
-    <textarea id="action-input" rows="4" cols="60" placeholder='{"clause_id": "...", "decision": "approve"}'></textarea><br>
-    <button onclick="takeStep()">Submit Action</button>
-    <pre id="step-output">—</pre>
+<div class="shell">
+
+  <!-- LEFT SIDEBAR -->
+  <aside class="sidebar-left">
+    <div>
+      <div class="sidebar-section-label">Environment</div>
+      <div class="task-select-wrap">
+        <select id="task-select">
+          <option value="">Loading tasks...</option>
+        </select>
+        <button class="btn btn-primary" id="btn-reset" onclick="resetEnv()">
+          ↺ &nbsp;Reset Episode
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="fetchTasks()">
+          Refresh Tasks
+        </button>
+      </div>
+    </div>
+
+    <div>
+      <div class="sidebar-section-label">Progress</div>
+      <div class="metric-grid">
+        <div class="metric">
+          <div class="metric-val" id="m-reviewed">—</div>
+          <div class="metric-lbl">reviewed</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val" id="m-flagged">—</div>
+          <div class="metric-lbl">flagged</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val" id="m-approved">—</div>
+          <div class="metric-lbl">approved</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val" id="m-steps">—</div>
+          <div class="metric-lbl">steps left</div>
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);font-family:var(--font-mono);margin-bottom:4px">
+          <span>coverage</span><span id="pct-label">0%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="sidebar-section-label">Last Reward</div>
+      <div class="reward-box">
+        <div class="reward-row">
+          <span class="reward-key">step</span>
+          <span class="reward-num" id="rwd-step">—</span>
+        </div>
+        <div class="reward-row">
+          <span class="reward-key">cumulative</span>
+          <span class="reward-num" id="rwd-cum">—</span>
+        </div>
+        <div class="reward-feedback" id="rwd-feedback">Take an action to see reward feedback.</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="sidebar-section-label">Quick Actions</div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        <button class="btn btn-danger btn-sm" id="qa-flag" onclick="quickAction('flag')" disabled>
+          ⚑ &nbsp;Flag Current Clause
+        </button>
+        <button class="btn btn-success btn-sm" id="qa-approve" onclick="quickAction('approve')" disabled>
+          ✓ &nbsp;Approve Current Clause
+        </button>
+        <button class="btn btn-ghost btn-sm" id="qa-submit" onclick="quickAction('submit')" disabled>
+          → &nbsp;Submit Review
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CENTER -->
+  <main class="main-center">
+    <div class="main-toolbar">
+      <div>
+        <div class="doc-title" id="doc-title">No document loaded</div>
+        <div class="doc-meta" id="doc-meta">Select a task and reset to begin</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="current-clause-label">reviewing</span>
+        <span class="current-clause-id" id="active-clause-id">—</span>
+      </div>
+    </div>
+
+    <div class="clauses-wrap" id="clauses-wrap">
+      <div class="empty-state">
+        <div class="empty-icon">📄</div>
+        <div class="empty-text">Reset the environment to load a contract document and begin reviewing clauses.</div>
+      </div>
+    </div>
+
+    <div class="action-panel">
+      <div class="action-panel-title">Quick Action — Current Clause</div>
+      <div class="action-row">
+        <button class="btn btn-danger btn-sm" id="panel-flag" onclick="quickAction('flag')" disabled>⚑ Flag Issue</button>
+        <button class="btn btn-success btn-sm" id="panel-approve" onclick="quickAction('approve')" disabled>✓ Approve</button>
+        <div style="flex:1"></div>
+        <button class="btn btn-ghost btn-sm" id="panel-submit" onclick="quickAction('submit')" disabled>→ Submit Review</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- RIGHT SIDEBAR -->
+  <aside class="sidebar-right">
+    <div>
+      <div class="sidebar-section-label">Action Builder</div>
+      <div class="action-builder">
+        <div class="form-row">
+          <label class="form-label">Action Type</label>
+          <select id="ab-type" onchange="updateActionBuilder()">
+            <option value="identify_issue">identify_issue</option>
+            <option value="approve_clause">approve_clause</option>
+            <option value="suggest_revision">suggest_revision</option>
+            <option value="request_clarification">request_clarification</option>
+            <option value="submit_review">submit_review</option>
+          </select>
+        </div>
+        <div class="form-row" id="ab-clause-row">
+          <label class="form-label">Clause ID</label>
+          <input type="text" id="ab-clause" placeholder="e.g. E03" />
+        </div>
+        <div class="form-row" id="ab-cat-row">
+          <label class="form-label">Issue Category</label>
+          <select id="ab-category">
+            <option value="ambiguous_language">ambiguous_language</option>
+            <option value="missing_clause">missing_clause</option>
+            <option value="unfair_term">unfair_term</option>
+            <option value="compliance_risk">compliance_risk</option>
+            <option value="liability_exposure">liability_exposure</option>
+            <option value="ip_risk">ip_risk</option>
+            <option value="inconsistency">inconsistency</option>
+            <option value="jurisdiction_issue">jurisdiction_issue</option>
+          </select>
+        </div>
+        <div class="form-row" id="ab-sev-row">
+          <label class="form-label">Severity</label>
+          <select id="ab-severity">
+            <option value="low">low</option>
+            <option value="medium">medium</option>
+            <option value="high" selected>high</option>
+            <option value="critical">critical</option>
+          </select>
+        </div>
+        <div class="form-row" id="ab-desc-row">
+          <label class="form-label">Description</label>
+          <textarea id="ab-description" rows="3" placeholder="Describe the issue..."></textarea>
+        </div>
+        <div class="form-row" id="ab-rev-row">
+          <label class="form-label">Suggested Revision</label>
+          <textarea id="ab-revision" rows="2" placeholder="Propose revised text..."></textarea>
+        </div>
+        <button class="btn btn-primary" style="width:100%" id="btn-step" onclick="takeStep()" disabled>
+          Send Action →
+        </button>
+      </div>
+    </div>
+
+    <div>
+      <div class="sidebar-section-label">Step Log</div>
+      <div class="log-container">
+        <div class="log-header">
+          <span class="log-title">trajectory</span>
+          <button class="log-clear" onclick="clearLog()">clear</button>
+        </div>
+        <div class="log-body" id="log-body">
+          <span style="color:var(--text3);font-family:var(--font-mono);font-size:11px">No steps taken yet.</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="sidebar-section-label">API Trace</div>
+      <div class="api-trace">
+        <div class="api-trace-header">
+          <span class="api-method post" id="trace-method">POST</span>
+          <span id="trace-path">/step</span>
+        </div>
+        <pre id="api-trace-body">Waiting for first request...</pre>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- DONE OVERLAY -->
+<div class="done-overlay" id="done-overlay">
+  <div class="done-card">
+    <div class="done-icon" id="done-icon">📋</div>
+    <div class="done-label">Episode Complete</div>
+    <div class="done-score" id="done-score" style="color:var(--gold)">—</div>
+    <div class="done-score-max">/ 1.00</div>
+    <div class="done-breakdown" id="done-breakdown"></div>
+    <div class="done-explanation" id="done-explanation"></div>
+    <button class="btn btn-primary" style="width:100%" onclick="closeDone()">↺ &nbsp;Start New Episode</button>
   </div>
+</div>
 
-  <div class="card">
-    <h2>4. View Current State</h2>
-    <button onclick="getState()">Get State</button>
-    <pre id="state-output">—</pre>
-  </div>
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
 
-  <script>
-    const BASE = "";  // same origin
+<script>
+  const BASE = "";
+  let episodeActive = false;
+  let currentObs = null;
+  let stepCount = 0;
+  let maxSteps = 30;
+  let clauseStates = {};
 
-    async function api(path, method = "GET", body = null) {
-      const opts = { method, headers: { "Content-Type": "application/json" } };
-      if (body) opts.body = JSON.stringify(body);
+  async function api(path, method = "GET", body = null) {
+    const opts = { method, headers: { "Content-Type": "application/json" } };
+    if (body) opts.body = JSON.stringify(body);
+    try {
       const res = await fetch(BASE + path, opts);
-      return res.json();
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch(e) {
+      throw e;
     }
+  }
 
-    async function loadTasks() {
+  function setConnected(ok) {
+    const dot = document.getElementById("dot");
+    const lbl = document.getElementById("conn-status");
+    dot.className = "status-dot " + (ok ? "live" : "error");
+    lbl.innerHTML = `<span class="status-dot ${ok?'live':'error'}"></span>${ok ? "connected" : "error"}`;
+  }
+
+  function showToast(msg, type="") {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.className = "toast show " + type;
+    setTimeout(() => t.className = "toast", 2800);
+  }
+
+  async function fetchTasks() {
+    try {
       const data = await api("/tasks");
-      document.getElementById("tasks-output").textContent = JSON.stringify(data, null, 2);
+      const sel = document.getElementById("task-select");
+      sel.innerHTML = data.tasks.map(t =>
+        `<option value="${t.task_id}">[${t.difficulty.toUpperCase()}] ${t.document_title}</option>`
+      ).join("");
+      setConnected(true);
+      showToast(`${data.tasks.length} tasks loaded`, "ok");
+      updateTrace("GET", "/tasks", null, data);
+    } catch(e) {
+      setConnected(false);
+      showToast("Cannot reach server — is it running?", "err");
     }
+  }
 
-    async function resetEnv() {
-      const taskId = document.getElementById("task-id").value || null;
+  async function resetEnv() {
+    const taskId = document.getElementById("task-select").value || null;
+    try {
       const data = await api("/reset", "POST", { task_id: taskId, seed: 42 });
-      document.getElementById("reset-output").textContent = JSON.stringify(data, null, 2);
+      episodeActive = true;
+      currentObs = data;
+      clauseStates = {};
+      stepCount = 0;
+      maxSteps = data.max_steps || 30;
+      document.getElementById("done-overlay").classList.remove("visible");
+      renderObservation(data);
+      resetRewardDisplay();
+      updateButtons(true);
+      document.getElementById("log-body").innerHTML = '<span style="color:var(--text3);font-family:var(--font-mono);font-size:11px">Episode started.</span>';
+      updateTrace("POST", "/reset", { task_id: taskId, seed: 42 }, data);
+      showToast("Episode reset — begin reviewing", "ok");
+      setConnected(true);
+    } catch(e) {
+      showToast("Reset failed: " + e.message, "err");
+      setConnected(false);
+    }
+  }
+
+  function renderObservation(obs) {
+    document.getElementById("doc-title").textContent = obs.document_title || "Document";
+    const progress = obs.progress || {};
+    const total = progress.total_clauses || 0;
+    const reviewed = progress.reviewed_clauses || 0;
+    const flagged = progress.flagged_clauses || 0;
+    const approved = progress.approved_clauses || 0;
+    const stepsLeft = (obs.max_steps || 30) - (obs.step_count || 0);
+    document.getElementById("doc-meta").textContent =
+      `${total} clauses · step ${obs.step_count || 0} of ${obs.max_steps || 30}`;
+    document.getElementById("m-reviewed").textContent = reviewed;
+    document.getElementById("m-flagged").textContent = flagged;
+    document.getElementById("m-reviewed").className = "metric-val";
+    document.getElementById("m-flagged").className = "metric-val" + (flagged > 0 ? " bad" : "");
+    document.getElementById("m-approved").textContent = approved;
+    document.getElementById("m-steps").textContent = stepsLeft;
+    document.getElementById("m-steps").className = "metric-val" + (stepsLeft < 5 ? " bad" : "");
+    const pct = total > 0 ? Math.round(reviewed / total * 100) : 0;
+    document.getElementById("pct-label").textContent = pct + "%";
+    document.getElementById("progress-fill").style.width = pct + "%";
+    const current = obs.current_clause;
+    const activeId = current ? current.clause_id : "—";
+    document.getElementById("active-clause-id").textContent = activeId;
+    if (current) document.getElementById("ab-clause").value = current.clause_id;
+    renderClauses(obs);
+    stepCount = obs.step_count || 0;
+    maxSteps = obs.max_steps || 30;
+  }
+
+  function renderClauses(obs) {
+    const wrap = document.getElementById("clauses-wrap");
+    const issues = obs.issues_found || [];
+    const flaggedIds = new Set(issues.map(i => i.clause_id));
+    let approvedIds = new Set();
+    if (obs.progress) {
+      (obs.approved_clauses || []).forEach(id => approvedIds.add(id));
+    }
+    const current = obs.current_clause;
+    const currentId = current ? current.clause_id : null;
+
+    if (!obs.document_title) { return; }
+
+    // Build clause list from obs - we'll use current_clause + issues_found to infer what we've seen
+    // We store rendered clauses accumulating
+    if (!window._allClauses) window._allClauses = [];
+    if (current && !window._allClauses.find(c => c.clause_id === current.clause_id)) {
+      window._allClauses.push(current);
     }
 
-    async function takeStep() {
-      try {
-        const action = JSON.parse(document.getElementById("action-input").value);
-        const data = await api("/step", "POST", action);
-        document.getElementById("step-output").textContent = JSON.stringify(data, null, 2);
-      } catch (e) {
-        document.getElementById("step-output").textContent = "Invalid JSON: " + e.message;
+    // If it's a fresh reset, clear
+    if (obs.step_count === 0) {
+      window._allClauses = current ? [current] : [];
+    }
+
+    wrap.innerHTML = '';
+    window._allClauses.forEach(clause => {
+      const isFlagged = flaggedIds.has(clause.clause_id);
+      const isApproved = clauseStates[clause.clause_id] === 'approved';
+      const isActive = clause.clause_id === currentId;
+
+      const card = document.createElement('div');
+      let cls = 'clause-card';
+      if (isActive) cls += ' active';
+      else if (isFlagged) cls += ' flagged';
+      else if (isApproved) cls += ' approved';
+      card.className = cls;
+
+      let statusHtml = '';
+      if (isActive) statusHtml = '<span class="clause-status reviewing">● Under Review</span>';
+      else if (isFlagged) {
+        const issue = issues.find(i => i.clause_id === clause.clause_id);
+        const cat = issue ? issue.category : '';
+        statusHtml = `<span class="clause-status flagged">⚑ Issue — ${cat}</span>`;
+      } else if (isApproved) statusHtml = '<span class="clause-status approved">✓ Approved</span>';
+
+      card.innerHTML = `
+        ${isActive ? '<div class="clause-active-indicator"></div>' : ''}
+        <div class="clause-header">
+          <span class="clause-id-badge">${clause.clause_id}</span>
+          <span class="clause-section">${clause.section || ''}</span>
+        </div>
+        <div class="clause-text">${clause.text}</div>
+        ${statusHtml}
+      `;
+      wrap.appendChild(card);
+    });
+
+    if (window._allClauses.length === 0) {
+      wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">📄</div><div class="empty-text">Loading clauses...</div></div>`;
+    }
+  }
+
+  async function takeStep() {
+    if (!episodeActive) { showToast("Reset first", "err"); return; }
+    const type = document.getElementById("ab-type").value;
+    const action = { action_type: type };
+    const cid = document.getElementById("ab-clause").value.trim();
+    if (cid) action.clause_id = cid;
+    if (["identify_issue","suggest_revision"].includes(type)) {
+      action.issue_category = document.getElementById("ab-category").value;
+      action.issue_severity = document.getElementById("ab-severity").value;
+      action.issue_description = document.getElementById("ab-description").value;
+      action.suggested_revision = document.getElementById("ab-revision").value;
+    }
+    await sendAction(action);
+  }
+
+  async function quickAction(type) {
+    if (!episodeActive) { showToast("Reset first", "err"); return; }
+    if (type === "submit") {
+      await sendAction({ action_type: "submit_review" });
+      return;
+    }
+    const activeId = document.getElementById("active-clause-id").textContent;
+    if (!activeId || activeId === "—") { showToast("No active clause", "err"); return; }
+    const action = {
+      action_type: type === "flag" ? "identify_issue" : "approve_clause",
+      clause_id: activeId,
+    };
+    if (type === "flag") {
+      action.issue_category = document.getElementById("ab-category").value;
+      action.issue_severity = document.getElementById("ab-severity").value;
+      action.issue_description = document.getElementById("ab-description").value || "Issue identified";
+    }
+    if (type === "approve") clauseStates[activeId] = "approved";
+    await sendAction(action);
+  }
+
+  async function sendAction(action) {
+    try {
+      const data = await api("/step", "POST", action);
+      const obs = data.observation;
+      const rwd = data.reward;
+      const done = data.done;
+
+      // Track next clause
+      if (obs.current_clause) {
+        if (!window._allClauses) window._allClauses = [];
+        if (!window._allClauses.find(c => c.clause_id === obs.current_clause.clause_id)) {
+          window._allClauses.push(obs.current_clause);
+        }
       }
-    }
 
-    async function getState() {
-      const data = await api("/state");
-      document.getElementById("state-output").textContent = JSON.stringify(data, null, 2);
+      currentObs = obs;
+      renderObservation(obs);
+      updateRewardDisplay(rwd);
+      addLogEntry(action, rwd);
+      updateTrace("POST", "/step", action, data);
+      setConnected(true);
+
+      if (done) {
+        episodeActive = false;
+        updateButtons(false);
+        const grade = data.info && data.info.final_grade ? data.info.final_grade : null;
+        showDone(grade, rwd);
+      }
+    } catch(e) {
+      showToast("Step failed: " + e.message, "err");
+      setConnected(false);
     }
-  </script>
+  }
+
+  function updateRewardDisplay(rwd) {
+    const stepEl = document.getElementById("rwd-step");
+    const cumEl = document.getElementById("rwd-cum");
+    const stepVal = rwd.step_reward || 0;
+    const cumVal = rwd.cumulative_reward || 0;
+    const sign = v => v >= 0 ? "+" : "";
+    stepEl.textContent = sign(stepVal) + stepVal.toFixed(4);
+    stepEl.className = "reward-num " + (stepVal > 0 ? "pos" : stepVal < 0 ? "neg" : "");
+    cumEl.textContent = sign(cumVal) + cumVal.toFixed(4);
+    cumEl.className = "reward-num " + (cumVal > 0 ? "pos" : cumVal < 0 ? "neg" : "");
+    document.getElementById("rwd-feedback").textContent = rwd.feedback || "";
+  }
+
+  function resetRewardDisplay() {
+    document.getElementById("rwd-step").textContent = "—";
+    document.getElementById("rwd-step").className = "reward-num";
+    document.getElementById("rwd-cum").textContent = "—";
+    document.getElementById("rwd-cum").className = "reward-num";
+    document.getElementById("rwd-feedback").textContent = "Take an action to see reward feedback.";
+  }
+
+  function addLogEntry(action, rwd) {
+    const log = document.getElementById("log-body");
+    if (log.querySelector("span")) log.innerHTML = "";
+    const step = stepCount;
+    const type = action.action_type;
+    const cid = action.clause_id || "—";
+    const r = rwd.step_reward || 0;
+    const sign = r >= 0 ? "+" : "";
+    const typeClass = type.includes("issue") ? "flag" : type.includes("approve") ? "approve" : "submit";
+    const shortType = type.replace("_clause","").replace("_review","").replace("identify_","flag:");
+    const entry = document.createElement("div");
+    entry.className = "log-entry";
+    entry.innerHTML = `
+      <span class="log-step">${String(step).padStart(2,"0")}</span>
+      <span class="log-type ${typeClass}">${shortType}</span>
+      <span style="color:var(--text3);font-size:11px;font-family:var(--font-mono)">[${cid}]</span>
+      <span class="log-rwd ${r>=0?'pos':'neg'}">${sign}${r.toFixed(2)}</span>
+    `;
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function clearLog() {
+    document.getElementById("log-body").innerHTML = '<span style="color:var(--text3);font-family:var(--font-mono);font-size:11px">Log cleared.</span>';
+  }
+
+  function updateTrace(method, path, req, res) {
+    document.getElementById("trace-method").textContent = method;
+    document.getElementById("trace-method").className = "api-method " + method.toLowerCase();
+    document.getElementById("trace-path").textContent = path;
+    let out = "";
+    if (req) out += "// request\n" + JSON.stringify(req, null, 2) + "\n\n";
+    out += "// response\n" + JSON.stringify(res, null, 2);
+    document.getElementById("api-trace-body").textContent = out;
+  }
+
+  function updateButtons(active) {
+    ["qa-flag","qa-approve","qa-submit","panel-flag","panel-approve","panel-submit","btn-step"]
+      .forEach(id => document.getElementById(id).disabled = !active);
+  }
+
+  function updateActionBuilder() {
+    const type = document.getElementById("ab-type").value;
+    const showClause = !["submit_review"].includes(type);
+    const showIssue = ["identify_issue","suggest_revision"].includes(type);
+    document.getElementById("ab-clause-row").style.display = showClause ? "" : "none";
+    document.getElementById("ab-cat-row").style.display = showIssue ? "" : "none";
+    document.getElementById("ab-sev-row").style.display = showIssue ? "" : "none";
+    document.getElementById("ab-desc-row").style.display = showIssue ? "" : "none";
+    document.getElementById("ab-rev-row").style.display = showIssue ? "" : "none";
+  }
+
+  function showDone(grade, rwd) {
+    const overlay = document.getElementById("done-overlay");
+    overlay.classList.add("visible");
+    const score = grade ? grade.score : 0;
+    const scoreEl = document.getElementById("done-score");
+    scoreEl.textContent = score.toFixed(2);
+    scoreEl.style.color = score >= 0.8 ? "var(--green)" : score >= 0.5 ? "var(--gold)" : "var(--red)";
+    document.getElementById("done-icon").textContent = score >= 0.8 ? "🏆" : score >= 0.5 ? "📋" : "📉";
+
+    if (grade && grade.breakdown) {
+      const b = grade.breakdown;
+      document.getElementById("done-breakdown").innerHTML = Object.entries(b)
+        .filter(([k]) => k !== "total")
+        .map(([k,v]) => `<div class="done-breakdown-row"><span class="done-breakdown-key">${k}</span><span class="done-breakdown-val">${(v*100).toFixed(1)}%</span></div>`)
+        .join("");
+    }
+    document.getElementById("done-explanation").textContent =
+      grade ? grade.explanation : (rwd && rwd.feedback ? rwd.feedback : "Episode ended.");
+  }
+
+  function closeDone() {
+    document.getElementById("done-overlay").classList.remove("visible");
+    window._allClauses = [];
+    resetEnv();
+  }
+
+  // Init
+  updateActionBuilder();
+  updateButtons(false);
+  fetchTasks();
+</script>
 </body>
 </html>
