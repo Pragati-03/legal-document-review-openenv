@@ -1,11 +1,12 @@
 """
 FastAPI server — exposes the LegalReviewEnv via HTTP following OpenEnv conventions.
 Endpoints:
-    POST /reset  → initial Observation
-    POST /step   → (Observation, Reward, done, info)
-    GET  /state  → current state dict
-    GET  /tasks  → list available tasks
-    GET  /health → health check
+    GET  /        → service info
+    POST /reset   → initial Observation
+    POST /step    → (Observation, Reward, done, info)
+    GET  /state   → current state dict
+    GET  /tasks   → list available tasks
+    GET  /health  → health check
 """
 from __future__ import annotations
 
@@ -32,7 +33,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Single-session store
 _env: Optional[LegalReviewEnv] = None
 
 
@@ -46,6 +46,22 @@ class StepResponse(BaseModel):
     reward: Reward
     done: bool
     info: Dict[str, Any]
+
+
+@app.get("/")
+def root():
+    return {
+        "service": "Legal Document Review — OpenEnv",
+        "version": "1.0.0",
+        "endpoints": {
+            "health": "GET /health",
+            "tasks": "GET /tasks",
+            "reset": "POST /reset",
+            "step": "POST /step",
+            "state": "GET /state",
+            "docs": "GET /docs",
+        }
+    }
 
 
 @app.get("/health")
@@ -72,7 +88,7 @@ def list_tasks():
 
 
 @app.post("/reset", response_model=Observation)
-def reset(req: ResetRequest = ResetRequest()):   # ← default fixes the null-body error
+def reset(req: ResetRequest = ResetRequest()):
     global _env
     _env = LegalReviewEnv(task_id=req.task_id, seed=req.seed)
     return _env.reset()
