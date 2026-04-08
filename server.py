@@ -1,35 +1,100 @@
-[project]
-name = "legal-review-openenv"
-version = "1.0.0"
-description = "AI agent environment for reviewing legal contracts"
-requires-python = ">=3.10"
-dependencies = [
-    "openenv-core>=0.2.0",
-    "fastapi>=0.100.0",
-    "uvicorn>=0.23.0",
-    "pydantic>=2.0.0",
-    "requests>=2.31.0",
-]
+"""
+FastAPI server — exposes the LegalReviewEnv via HTTP following OpenEnv conventions.
+Endpoints:
+    POST /reset  → initial Observation
+    POST /step   → (Observation, Reward, done, info)
+    GET  /state  → current state dict
+    GET  /tasks  → list available tasks
+    GET  /health → health check
+"""
+from __future__ import annotations
 
-[project.scripts]
-server = "server:app"
+import os
+from typing import Any, Dict, Optional
 
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.backends.legacy:build"
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
-[tool.openenv]
-name = "Legal Document Review"
-version = "1.0.0"
-entry_point = "inference.py"
-reset_endpoint = "/reset"
-step_endpoint = "/step"
-observation_endpoint = "/state"
-health_endpoint = "/health"
-tasks_endpoint = "/tasks"
+from env.environment import LegalReviewEnv
+from env.models import Action, Observation, Reward
 
-[tool.openenv.metadata]
-task_type = "document_review"
-domain = "legal"
-modality = "text"
-multi_step = true
+app = FastAPI(
+    title="Legal Document Review — OpenEnv",
+    description="AI agent environment for reviewing legal contracts.",
+    version="1.0.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+_env: Optional[LegalReviewEnv] = None
+
+
+class ResetRequest(BaseModel):
+    task_id: Optional[str] = None
+    seed: int = 42
+
+
+class StepResponse(BaseModel):
+    observation: Observation
+    reward: Reward
+    done: bool
+    info: Dict[str, Any]
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok", "service": "legal-review-openenv"}
+
+
+@app.get("/tasks")
+def list_tasks():
+    from tasks.task_definitions import ALL_TASKS
+    return {
+        "tasks": [
+            {
+                "task_id": t.task_id,
+                "difficulty": t.difficulty,
+                "document_title": t.document_title,
+                "description": t.description,
+                "num_clauses": len(t.clauses),
+                "max_steps": t.max_steps,
+            }
+            for t in ALL_TASKS.values()
+        ]
+    }
+
+
+@app.post("/reset", response_model=Observation)
+def reset(req: ResetRequest = ResetRequest()):
+    global _env
+    _env = LegalReviewEnv(task_id=req.task_id, seed=req.seed)
+    return _env.reset()
+
+
+@app.post("/step", response_model=StepResponse)
+def step(action: Action):
+    global _env
+    if _env is None:
+        raise HTTPException(status_code=400, detail="Environment not initialised. Call /reset first.")
+    obs, reward, done, info = _env.step(action)
+    return StepResponse(observation=obs, reward=reward, done=done, info=info)
+
+
+@app.get("/state")
+def state():
+    global _env
+    if _env is None:
+        raise HTTPException(status_code=400, detail="Environment not initialised. Call /reset first.")
+    return _env.state()
+
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("server:app", host="0.0.0.0", port=port, reload=False)
