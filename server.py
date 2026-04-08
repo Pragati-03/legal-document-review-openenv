@@ -82,7 +82,7 @@ def list_tasks():
     }
 
 @app.post("/reset")
-def reset(req: ResetRequest = ResetRequest())::
+def reset(req: ResetRequest = ResetRequest()):
     global _env
     try:
         _env = LegalReviewEnv(task_id=req.task_id, seed=req.seed)
